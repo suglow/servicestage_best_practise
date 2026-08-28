@@ -1,0 +1,35 @@
+server:
+  port: 8082
+
+servicecomb:
+  # 灰度路由规则（|- 语法：YAML 解析为 String，RouterRuleCache.getProperty() 可正常读取）
+  routeRule:
+    product-service: |
+      - precedence: 2
+        match:
+          headers:
+            X-Gray-Tag:
+              exact: gray
+        route:
+          - weight: 100
+            tags:
+              version: 2.0.0
+      - precedence: 1
+        match:
+          headers: {}
+        route:
+          - weight: 100
+            tags:
+              version: 1.0.0
+
+  matchGroup:
+    rate-limit-test: |
+      matches:
+        - apiPath:
+            prefix: "/api/orders/test/rate-limit"
+
+  rateLimiting:
+    rate-limit-test: |
+      rate: 2
+      limitRefreshPeriod: 5000
+      timeoutDuration: 0

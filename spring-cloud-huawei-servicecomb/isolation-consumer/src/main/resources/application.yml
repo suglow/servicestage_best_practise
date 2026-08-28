@@ -1,0 +1,81 @@
+server:
+  port: 8093
+
+servicecomb:
+  matchGroup:
+    minimumOperation: |
+      matches:
+        - apiPath:
+            prefix: "/minimum-calls"
+    percentOperation: |
+      matches:
+        - apiPath:
+            prefix: "/failed-percent"
+    slowOperation: |
+      matches:
+        - apiPath:
+            prefix: "/slow-call"
+    forceClosedOperation: |
+      matches:
+        - apiPath:
+            prefix: "/force-closed"
+    forceOpenOperation: |
+      matches:
+        - apiPath:
+            prefix: "/force-open"
+    forceOpenServiceOperation: |
+      matches:
+        - apiPath:
+            prefix: "/force-open-service"
+          serviceName: isolation-provider
+    errorCodeOperation: |
+      matches:
+        - apiPath:
+            prefix: "/error-code"
+
+  instanceIsolation:
+    minimumOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 60000
+      recordFailureStatus:
+        - 502
+        - 503
+    percentOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+    slowOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 2000
+    forceClosedOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceClosed: true
+    forceOpenOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceOpen: true
+    forceOpenServiceOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceOpen: true
+    errorCodeOperation: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 2
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      recordFailureStatus:
+        - 500

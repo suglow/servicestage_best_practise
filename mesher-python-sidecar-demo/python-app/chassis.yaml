@@ -1,0 +1,37 @@
+---
+# Mesher sidecar 配置 — v1.8.1 默认模板
+# start.sh 会自动用容器实际 IP 替换 listenAddress 中的 127.0.0.1
+#
+# 关键修改点（相对官方默认）：
+#   - autoIPIndex: false → 端点注册时用 chassis.yaml 中配置的 IP（容器 IP），
+#     而不是 OS 返回的第一个非 loopback IP（可能仍是 127.0.0.1）
+#   - registry.type: servicecenter → 显式指定 registry 类型
+
+servicecomb:
+  service:
+    name: python-app
+    app: demo-application        # 注意：go-chassis ServiceSpec.AppID 的 yaml key = "app"（不是 application）
+    version: 1.0.0
+    properties:
+      allowCrossApp: true
+  protocols:
+    grpc:
+      listenAddress: 127.0.0.1:40101
+    http:
+      listenAddress: 127.0.0.1:30101
+    rest-admin:
+      listenAddress: 127.0.0.1:30102
+  registry:
+    type: servicecenter
+    address: http://local-cse:30100
+    scope: full
+    watch: false
+    autoIPIndex: false
+  handler:
+    chain:
+      Consumer:
+        outgoing: router,ratelimiter-consumer,loadbalance,transport
+      Provider:
+        # mesher 1.8.1 默认入向 chain 只有 ratelimiter-provider+transport，没有 loadbalance。
+        # 加上 router,loadbalance 后 RemoteRequestHandler 才能从 service-center 找到目标实例。
+        incoming: router,loadbalance,ratelimiter-provider,transport

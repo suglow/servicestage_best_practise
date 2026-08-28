@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: isolation-provider
+  cloud:
+    servicecomb:
+      service:
+        application: ${CAS_APPLICATION_NAME:demo-application}
+        name: ${spring.application.name}
+        version: ${CAS_INSTANCE_VERSION:1.0.0}
+      discovery:
+        address: ${PAAS_CSE_SC_ENDPOINT:http://127.0.0.1:30100}
+      config:
+        serverAddr: ${PAAS_CSE_CC_ENDPOINT:http://127.0.0.1:30110}
+        serverType: kie

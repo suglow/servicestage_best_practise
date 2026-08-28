@@ -1,0 +1,308 @@
+x-application-environment: &application-environment
+  NACOS_SERVER_ADDR: nacos:8848
+  NACOS_NAMESPACE: ${NACOS_NAMESPACE:-dev}
+  SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+  SPRING_CLOUD_NACOS_CONFIG_NAMESPACE: ${NACOS_NAMESPACE:-dev}
+
+x-application-service: &application-service
+  restart: unless-stopped
+  networks:
+    - demo-network
+  depends_on:
+    nacos-init:
+      condition: service_completed_successfully
+
+x-core-healthcheck: &core-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 30s
+
+x-governance-healthcheck: &governance-healthcheck
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 15s
+
+services:
+  nacos:
+    image: nacos/nacos-server:v2.1.0
+    environment:
+      MODE: standalone
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - nacos-data:/home/nacos/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - demo-network
+
+  nacos-init:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      nacos:
+        condition: service_healthy
+    volumes:
+      - ./scripts/nacos-init.sh:/nacos-init.sh:ro
+      - ./scripts/gray-routing.yaml:/config/gray-routing.yaml:ro
+    entrypoint: ["sh", "/nacos-init.sh"]
+    environment:
+      NACOS_URL: http://nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-dev}
+      NACOS_GROUP: CORE_GROUP
+    networks:
+      - demo-network
+
+  product-service:
+    <<: *application-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: product-service
+    image: spring-cloud-huawei-nacos-product-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8081:8081"
+    healthcheck:
+      <<: *core-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/api/products >/dev/null"]
+
+  product-service-v2:
+    <<: *application-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: product-service-v2
+    image: spring-cloud-huawei-nacos-product-service-v2:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8083:8083"
+    healthcheck:
+      <<: *core-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/api/products >/dev/null"]
+
+  order-service:
+    <<: *application-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: order-service
+    image: spring-cloud-huawei-nacos-order-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8082:8082"
+    healthcheck:
+      <<: *core-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health >/dev/null"]
+
+  gateway:
+    <<: *application-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: gateway
+    image: spring-cloud-huawei-nacos-gateway:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8080:8080"
+    healthcheck:
+      <<: *core-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/products >/dev/null"]
+
+  order-service-feign:
+    <<: *application-service
+    profiles: ["feign", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: order-service-feign
+    image: spring-cloud-huawei-nacos-order-service-feign:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8084:8084"
+    healthcheck:
+      <<: *core-healthcheck
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/api/orders-fg/products >/dev/null"]
+
+  retry-provider:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: retry-provider
+    image: spring-cloud-huawei-nacos-retry-provider:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8090:8090"
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8090/"]
+
+  retry-consumer:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: retry-consumer
+    image: spring-cloud-huawei-nacos-retry-consumer:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8091:8091"
+    depends_on:
+      nacos-init:
+        condition: service_completed_successfully
+      retry-provider:
+        condition: service_healthy
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8091/"]
+
+  isolation-provider:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: isolation-provider
+    image: spring-cloud-huawei-nacos-isolation-provider:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8092:8092"
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8092/"]
+
+  isolation-consumer:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: isolation-consumer
+    image: spring-cloud-huawei-nacos-isolation-consumer:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8093:8093"
+    depends_on:
+      nacos-init:
+        condition: service_completed_successfully
+      isolation-provider:
+        condition: service_healthy
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8093/"]
+
+  bulkhead-provider:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: bulkhead-provider
+    image: spring-cloud-huawei-nacos-bulkhead-provider:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8094:8094"
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8094/"]
+
+  bulkhead-consumer:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: bulkhead-consumer
+    image: spring-cloud-huawei-nacos-bulkhead-consumer:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8095:8095"
+    depends_on:
+      nacos-init:
+        condition: service_completed_successfully
+      bulkhead-provider:
+        condition: service_healthy
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8095/"]
+
+  circuit-breaker-provider:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: circuit-breaker-provider
+    image: spring-cloud-huawei-nacos-circuit-breaker-provider:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8096:8096"
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8096/"]
+
+  circuit-breaker-consumer:
+    <<: *application-service
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: circuit-breaker-consumer
+    image: spring-cloud-huawei-nacos-circuit-breaker-consumer:${IMAGE_TAG:-latest}
+    environment:
+      <<: *application-environment
+    ports:
+      - "8097:8097"
+    depends_on:
+      nacos-init:
+        condition: service_completed_successfully
+      circuit-breaker-provider:
+        condition: service_healthy
+    healthcheck:
+      <<: *governance-healthcheck
+      test: ["CMD-SHELL", "curl -sS -o /dev/null http://localhost:8097/"]
+
+networks:
+  demo-network:
+    driver: bridge
+
+volumes:
+  nacos-data:

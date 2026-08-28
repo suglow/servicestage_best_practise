@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: fault-injection-consumer
+  cloud:
+    servicecomb:
+      service:
+        application: ${CAS_APPLICATION_NAME:demo-application}
+        name: ${spring.application.name}
+        version: ${CAS_INSTANCE_VERSION:1.0.0}
+      discovery:
+        address: ${PAAS_CSE_SC_ENDPOINT:http://127.0.0.1:30100}
+      config:
+        serverAddr: ${PAAS_CSE_CC_ENDPOINT:http://127.0.0.1:30110}
+        serverType: kie
+        # ⚠️ 必须启用 fileSource，让 KIE 中 governance.yaml 的内容被 YamlPropertiesFactoryBean 扁平化
+        # 这样 servicecomb.matchGroup.* 和 servicecomb.faultInjection.* 才可被框架读取
+        # 所以才能测试故障注入
+        # 验证: 启动后可以调用 /api/fault-test/preview 看 environment.getProperty 值
+        fileSource: governance-fault.yaml,application.yaml

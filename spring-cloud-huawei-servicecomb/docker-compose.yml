@@ -1,0 +1,342 @@
+# Shared defaults for every Spring Cloud Huawei application container.
+x-servicecomb-environment: &servicecomb-environment
+  PAAS_CSE_SC_ENDPOINT: http://local-cse:30100
+  PAAS_CSE_CC_ENDPOINT: http://local-cse:30110
+  CAS_APPLICATION_NAME: ${CAS_APPLICATION_NAME:-demo-application}
+  CAS_INSTANCE_VERSION: 1.0.0
+
+x-application-service: &application-service
+  environment: *servicecomb-environment
+  depends_on:
+    local-cse:
+      condition: service_healthy
+    kie-init:
+      condition: service_completed_successfully
+  networks:
+    - demo-network
+
+x-healthcheck-product: &healthcheck-product
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8081/api/products/1 >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+x-healthcheck-product-v2: &healthcheck-product-v2
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8083/api/products/1 >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+x-healthcheck-order: &healthcheck-order
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8082/api/orders/products >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+x-healthcheck-gateway: &healthcheck-gateway
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/products/1 >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+x-healthcheck-kie-demo: &healthcheck-kie-demo
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8084/api/conf/current >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+
+services:
+  # ==============================================================
+  # ServiceComb Local CSE
+  # 包含 Service Center (:30100) + Config Center KIE (:30110)
+  # ==============================================================
+  local-cse:
+    build:
+      context: ./local-cse/
+      dockerfile: Dockerfile
+    ports:
+      - "30100:30100"   # Service Center
+      - "30110:30110"   # Config Center KIE
+      - "30103:30103"   # Frontend Dashboard
+    networks:
+      - demo-network
+
+  # ==============================================================
+  # KIE Init — 推送灰度路由规则到 KIE Config Center（一次性）
+  # 在 local-cse 健康后执行，确保 RouterFilter 初始化时规则已就位
+  # ==============================================================
+  kie-init:
+    build:
+      context: ./kie-init/
+      dockerfile: Dockerfile
+    environment:
+      KIE_URL: http://local-cse:30110
+      CAS_APPLICATION_NAME: ${CAS_APPLICATION_NAME:-demo-application}
+    networks:
+      - demo-network
+    depends_on:
+      local-cse:
+        condition: service_healthy
+    restart: "no"
+
+  # ==============================================================
+  # 电商业务微服务
+  # ==============================================================
+
+  # product-service v1.0.0 — 稳定版商品服务
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: product-service
+    image: spring-cloud-huawei-servicecomb-product-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8081:8081"
+    <<: [*application-service, *healthcheck-product]
+
+  # product-service v2.0.0 — 灰度版商品服务
+  product-service-v2:
+    profiles: ["config", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: product-service-v2
+    image: spring-cloud-huawei-servicecomb-product-service-v2:${IMAGE_TAG:-latest}
+    ports:
+      - "8083:8083"
+    <<: [*application-service, *healthcheck-product-v2]
+    environment:
+      <<: *servicecomb-environment
+      CAS_INSTANCE_VERSION: 2.0.0
+
+  # order-service — 订单服务（Feign 消费者）
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: order-service
+    image: spring-cloud-huawei-servicecomb-order-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8082:8082"
+    <<: [*application-service, *healthcheck-order]
+
+  # gateway — API 网关（灰度路由 + 限流）
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: gateway
+    image: spring-cloud-huawei-servicecomb-gateway:${IMAGE_TAG:-latest}
+    ports:
+      - "8080:8080"
+    <<: [*application-service, *healthcheck-gateway]
+
+  # ==============================================================
+  # 重试治理演示
+  # ==============================================================
+
+  # retry-provider — 交替返回成功/失败
+  retry-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: retry-provider
+    image: spring-cloud-huawei-servicecomb-retry-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8090:8090"
+    <<: *application-service
+
+  # retry-consumer — 重试策略演示
+  retry-consumer:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: retry-consumer
+    image: spring-cloud-huawei-servicecomb-retry-consumer:${IMAGE_TAG:-latest}
+    ports:
+      - "8091:8091"
+    <<: *application-service
+
+  # ==============================================================
+  # 实例隔离演示
+  # ==============================================================
+
+  # isolation-provider — 计数器控制错误率
+  isolation-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: isolation-provider
+    image: spring-cloud-huawei-servicecomb-isolation-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8092:8092"
+    <<: *application-service
+
+  # isolation-consumer — 实例隔离演示
+  isolation-consumer:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: isolation-consumer
+    image: spring-cloud-huawei-servicecomb-isolation-consumer:${IMAGE_TAG:-latest}
+    ports:
+      - "8093:8093"
+    <<: *application-service
+
+  # ==============================================================
+  # 舱壁隔离演示
+  # ==============================================================
+
+  # bulkhead-provider — 模拟 1s 耗时
+  bulkhead-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: bulkhead-provider
+    image: spring-cloud-huawei-servicecomb-bulkhead-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8094:8094"
+    <<: *application-service
+
+  # bulkhead-consumer — 10 并发测试
+  bulkhead-consumer:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: bulkhead-consumer
+    image: spring-cloud-huawei-servicecomb-bulkhead-consumer:${IMAGE_TAG:-latest}
+    ports:
+      - "8095:8095"
+    <<: *application-service
+
+  # ==============================================================
+  # Consumer 侧熔断对比演示
+  # ==============================================================
+
+  # circuit-breaker-provider — 50%/100% 错误率 Provider
+  circuit-breaker-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: circuit-breaker-provider
+    image: spring-cloud-huawei-servicecomb-circuit-breaker-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8096:8096"
+    <<: *application-service
+
+  # circuit-breaker-consumer — Consumer 侧熔断规则，保护 Consumer
+  circuit-breaker-consumer:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: circuit-breaker-consumer
+    image: spring-cloud-huawei-servicecomb-circuit-breaker-consumer:${IMAGE_TAG:-latest}
+    ports:
+      - "8097:8097"
+    <<: *application-service
+
+  # ==============================================================
+  # 故障注入演示（Fault Injection）
+  # 三个服务组合：
+  #   - fault-injection-normal-provider: 正常 provider
+  #   - fault-injection-error-provider:  错误 provider（返回 500）
+  #   - fault-injection-consumer:        Consumer 端通过 KIE 推送 governance.yaml
+  #                           配置 faultInjection，按百分比概率注入故障
+  # ==============================================================
+  fault-injection-normal-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: fault-injection-normal-provider
+    image: spring-cloud-huawei-servicecomb-fault-injection-normal-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8100:8100"
+    <<: *application-service
+    environment:
+      <<: *servicecomb-environment
+      SERVER_PORT: 8100
+      CAS_INSTANCE_VERSION: 1.0.0
+
+  fault-injection-error-provider:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: fault-injection-error-provider
+    image: spring-cloud-huawei-servicecomb-fault-injection-error-provider:${IMAGE_TAG:-latest}
+    ports:
+      - "8101:8101"
+    <<: *application-service
+    environment:
+      <<: *servicecomb-environment
+      SERVER_PORT: 8101
+      CAS_INSTANCE_VERSION: 2.0.0
+
+  fault-injection-consumer:
+    profiles: ["governance", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: fault-injection-consumer
+    image: spring-cloud-huawei-servicecomb-fault-injection-consumer:${IMAGE_TAG:-latest}
+    ports:
+      - "8102:8102"
+    <<: *application-service
+    environment:
+      <<: *servicecomb-environment
+      SERVER_PORT: 8102
+      CAS_INSTANCE_VERSION: 1.0.0
+
+  # ==============================================================
+  # ServiceCenter 配置中心演示服务
+  # 演示 KIE 配置获取 + 配置变更处理 + 三种 value_type 差异
+  # ==============================================================
+  kie-config-demo:
+    profiles: ["config", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: kie-config-demo
+    image: spring-cloud-huawei-servicecomb-kie-config-demo:${IMAGE_TAG:-latest}
+    ports:
+      - "8084:8084"
+    <<: [*application-service, *healthcheck-kie-demo]
+
+networks:
+  demo-network:
+    driver: bridge

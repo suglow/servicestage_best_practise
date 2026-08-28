@@ -1,0 +1,21 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: order-service
+  cloud:
+    servicecomb:
+      discovery:
+        enabled: true
+        address: ${PAAS_CSE_SC_ENDPOINT:http://localhost:30100}
+        appName: ${CAS_APPLICATION_NAME:demo-application}
+        allowCrossApp: false
+      config:
+        enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

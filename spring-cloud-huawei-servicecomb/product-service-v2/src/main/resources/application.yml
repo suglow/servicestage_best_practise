@@ -1,0 +1,34 @@
+server:
+  port: 8083
+
+servicecomb:
+  matchGroup:
+    circuit-error: |
+      matches:
+        - apiPath:
+            prefix: "/api/products/test/error"
+    circuit-slow: |
+      matches:
+        - apiPath:
+            prefix: "/api/products/test/slow"
+
+  circuitBreaker:
+    circuit-error: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 4
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+    circuit-slow: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 4
+      slidingWindowType: COUNT_BASED
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 1000
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 2

@@ -1,0 +1,67 @@
+server:
+  port: 8091
+
+servicecomb:
+  matchGroup:
+    retryOperation: |
+      matches:
+        - apiPath:
+            exact: "/retry"
+    statusOperation: |
+      matches:
+        - apiPath:
+            exact: "/status-retry"
+    serviceOperation: |
+      matches:
+        - apiPath:
+            exact: "/retry-service-name"
+          serviceName: retry-consumer-wrong
+    onSameOneOperation: |
+      matches:
+        - apiPath:
+            exact: "/on-same-retry-one"
+    onSameTwoOperation: |
+      matches:
+        - apiPath:
+            exact: "/on-same-retry-two"
+
+  retry:
+    # 基础重试：最多3次，同实例1次
+    retryOperation: |
+      maxAttempts: 3
+      retryOnSame: 1
+      retryOnResponseStatus:
+        - 502
+        - 503
+      waitDuration: 50
+    # 状态码重试：500在列表内触发, 400不在列表不触发
+    statusOperation: |
+      maxAttempts: 3
+      retryOnResponseStatus:
+        - 502
+        - 503
+        - 500
+      waitDuration: 1
+    # serviceName 不匹配 → 策略不生效
+    serviceOperation: |
+      maxAttempts: 3
+      retryOnSame: 0
+      retryOnResponseStatus:
+        - 502
+        - 503
+      waitDuration: 3000
+    # 同实例重试1次 → 无法恢复
+    onSameOneOperation: |
+      maxAttempts: 1
+      retryOnSame: 1
+      retryOnResponseStatus:
+        - 502
+        - 503
+      waitDuration: 1
+    # 跨实例重试2次 → 全部恢复
+    onSameTwoOperation: |
+      maxAttempts: 2
+      retryOnResponseStatus:
+        - 502
+        - 503
+      waitDuration: 1

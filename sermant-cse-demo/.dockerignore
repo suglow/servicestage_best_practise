@@ -1,0 +1,11 @@
+.git
+.github
+.codex
+.agents
+**/target
+**/target.stale
+**/*.class
+**/*.log
+local-cse/Local-CSE-*.zip
+README.md
+docs

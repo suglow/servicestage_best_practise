@@ -1,0 +1,35 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: order-service-feign
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: CORE_GROUP
+        metadata:
+          version: "1.0.0"
+
+# ========================================================
+# OpenFeign 调用治理规则
+# ========================================================
+servicecomb:
+  # -------------------- 灰度路由 --------------------
+  # routeRule 已迁移到 Nacos 配置中心（gray-routing.yaml）
+  # 由 bootstrap.yaml 通过 shared-configs 加载，支持动态刷新
+
+  matchGroup:
+    feign-rate-limit: |
+      matches:
+        - apiPath:
+            prefix: "/api/orders-fg/test/rate-limit"
+
+  # -------------------- Feign 端点限流 --------------------
+  rateLimiting:
+    feign-rate-limit: |
+      rate: 2
+      limitRefreshPeriod: 5000
+      timeoutDuration: 0

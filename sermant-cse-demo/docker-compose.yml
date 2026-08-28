@@ -1,0 +1,73 @@
+x-servicecomb-environment: &servicecomb-environment
+  PAAS_CSE_SC_ENDPOINT: http://local-cse:30100
+  PAAS_CSE_CC_ENDPOINT: http://local-cse:30110
+  CAS_APPLICATION_NAME: ${CAS_APPLICATION_NAME:-demo-application}
+  CAS_INSTANCE_VERSION: ${CAS_INSTANCE_VERSION:-1.0.0}
+
+services:
+  local-cse:
+    build:
+      context: ./local-cse
+    ports:
+      - "${CSE_SC_PORT:-30100}:30100"
+      - "${CSE_CC_PORT:-30110}:30110"
+      - "${CSE_DASHBOARD_PORT:-30103}:30103"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:30100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [demo-network]
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sermant-runtime
+      args:
+        MODULE: product-service
+    image: sermant-cse-demo-product-service:${IMAGE_TAG:-local}
+    ports:
+      - "${PRODUCT_PORT:-8081}:8081"
+    environment:
+      <<: *servicecomb-environment
+    depends_on:
+      local-cse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/api/products/1001"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [demo-network]
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: plain-runtime
+      args:
+        MODULE: order-service
+    image: sermant-cse-demo-order-service:${IMAGE_TAG:-local}
+    ports:
+      - "${ORDER_PORT:-8080}:8080"
+    environment:
+      <<: *servicecomb-environment
+    depends_on:
+      local-cse:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [demo-network]
+
+networks:
+  demo-network:
+    driver: bridge

@@ -1,0 +1,103 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: isolation-consumer
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: GOVERNANCE_GROUP
+
+# ====================================================
+# 实例隔离规则 (Consumer 侧 instanceIsolation)
+# ====================================================
+servicecomb:
+  matchGroup:
+    minimumOperation: |
+      matches:
+        - apiPath:
+            exact: "/minimum-calls"
+    percentOperation: |
+      matches:
+        - apiPath:
+            exact: "/failed-percent"
+    slowOperation: |
+      matches:
+        - apiPath:
+            exact: "/slow-call"
+    forceClosedOperation: |
+      matches:
+        - apiPath:
+            exact: "/force-closed"
+    forceOpenOperation: |
+      matches:
+        - apiPath:
+            exact: "/force-open"
+    forceOpenServiceOperation: |
+      matches:
+        - apiPath:
+            exact: "/force-open-service"
+          serviceName: isolation-provider
+    errorCodeOperation: |
+      matches:
+        - apiPath:
+            exact: "/error-code"
+
+  instanceIsolation:
+    minimumOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 1000
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+    percentOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 1000
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordFailureStatus:
+        - 500
+    slowOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 100
+      waitDurationInOpenState: 1000
+      permittedNumberOfCallsInHalfOpenState: 2
+    forceClosedOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceClosed: true
+    forceOpenOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceOpen: true
+    forceOpenServiceOperation: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      forceOpen: true
+    errorCodeOperation: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 2
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 1000
+      recordFailureStatus:
+        - 500

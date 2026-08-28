@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.huaweicloud.samples.servicecomb</groupId>
+        <artifactId>spring-cloud-huawei-servicecomb</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>kie-config-demo</artifactId>
+    <name>KIE Config Demo</name>
+    <description>
+        演示 KIE 配置中心的配置获取、配置变更监听、value_type 差异。
+        使用的官方推荐模式：
+        - @RefreshScope + @Value (ProviderController 风格)
+        - GovernanceEventManager + @Subscribe (ConfigListen 风格)
+        - @ConfigurationProperties (静态配置绑定)
+    </description>
+
+    <dependencies>
+        <!-- ServiceComb 一站式 starter：注册发现 + KIE 配置中心（官方推荐） -->
+        <dependency>
+            <groupId>com.huaweicloud</groupId>
+            <artifactId>spring-cloud-starter-huawei-service-engine</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Actuator（提供 /actuator/refresh 和 /actuator/env） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Context（提供 @RefreshScope） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.huaweicloud.samples.servicecomb.kieconfig.KieConfigDemoApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

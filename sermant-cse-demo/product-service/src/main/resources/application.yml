@@ -1,0 +1,16 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: product-service
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

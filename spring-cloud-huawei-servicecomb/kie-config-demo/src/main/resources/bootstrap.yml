@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: kie-config-demo
+  cloud:
+    servicecomb:
+      service:
+        application: ${CAS_APPLICATION_NAME:demo-application}
+        name: ${spring.application.name}
+        version: ${CAS_INSTANCE_VERSION:1.0.0}
+      discovery:
+        address: ${PAAS_CSE_SC_ENDPOINT:http://127.0.0.1:30100}
+      config:
+        serverAddr: ${PAAS_CSE_CC_ENDPOINT:http://127.0.0.1:30110}
+        serverType: kie
+        # KIE 自定义标签：按微服务名隔离配置（和 basic/consumer 官方示例一致）
+        kie:
+          customLabel: ${spring.application.name}
+          customLabelValue: ${INSTANCE_TAG:default}
+        # 将 KIE 中指定的 key/value 文本项作为 YAML 格式配置注入
+        # 官方 basic 系列使用 governance.yaml,application.yaml
+        fileSource: application.yaml,testing.yaml
+      dashboard:
+        enabled: false
+
+logging:
+  level:
+    com.huaweicloud.config: INFO
+    com.huaweicloud.samples.servicecomb.kieconfig: INFO

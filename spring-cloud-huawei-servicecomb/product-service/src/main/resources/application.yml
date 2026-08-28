@@ -1,0 +1,55 @@
+server:
+  port: 8081
+
+# ========================================================
+# Spring Cloud Huawei 治理配置 — Provider 侧熔断
+# 规则作用于本服务的入站请求，保护 product-service 自身
+# ========================================================
+servicecomb:
+  matchGroup:
+    product-api: |
+      matches:
+        - apiPath:
+            prefix: "/api/products"
+    circuit-error: |
+      matches:
+        - apiPath:
+            prefix: "/api/products/test/error"
+    circuit-slow: |
+      matches:
+        - apiPath:
+            prefix: "/api/products/test/slow"
+
+  circuitBreaker:
+    product-api: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 20
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 1000
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 5
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+    circuit-error: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 4
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+    circuit-slow: |
+      minimumNumberOfCalls: 2
+      slidingWindowSize: 4
+      slidingWindowType: COUNT_BASED
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 1000
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 2

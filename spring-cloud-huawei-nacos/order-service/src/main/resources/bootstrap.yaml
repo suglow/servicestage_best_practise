@@ -1,0 +1,21 @@
+# bootstrap.yaml — 在 application.yml 之前加载
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        group: CORE_GROUP
+        namespace: ${NACOS_NAMESPACE:dev}
+        file-extension: yaml
+        import-check:
+          enabled: false
+        # 从 Nacos 配置中心加载共享灰度路由配置（支持动态刷新）
+        shared-configs:
+          - data-id: gray-routing.yaml
+            group: CORE_GROUP
+            refresh: true
+    servicecomb:
+      # 将 HTTP header 映射为灰度路由上下文
+      context:
+        headerContextMapper:
+          X-Gray-Tag: gray-tag

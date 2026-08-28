@@ -1,0 +1,11 @@
+.git
+.github
+.codex
+.agents
+**/target
+**/__pycache__
+**/*.pyc
+**/*.log
+local-cse/Local-CSE-*.zip
+README.md
+docs

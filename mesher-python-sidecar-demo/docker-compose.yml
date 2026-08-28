@@ -1,0 +1,103 @@
+x-servicecomb-environment: &servicecomb-environment
+  PAAS_CSE_SC_ENDPOINT: http://local-cse:30100
+  PAAS_CSE_CC_ENDPOINT: http://local-cse:30110
+  CAS_APPLICATION_NAME: ${CAS_APPLICATION_NAME:-demo-application}
+  CAS_INSTANCE_VERSION: ${CAS_INSTANCE_VERSION:-1.0.0}
+
+services:
+  local-cse:
+    build:
+      context: ./local-cse
+    image: mesher-demo-local-cse:${IMAGE_TAG:-local}
+    ports:
+      - "${CSE_SC_PORT:-30100}:30100"
+      - "${CSE_CC_PORT:-30110}:30110"
+      - "${CSE_DASHBOARD_PORT:-30103}:30103"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:30100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [demo-network]
+
+  java-provider:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: java-provider
+    image: mesher-demo-java-provider:${IMAGE_TAG:-local}
+    ports:
+      - "${JAVA_PROVIDER_PORT:-7001}:7001"
+    environment:
+      <<: *servicecomb-environment
+    depends_on:
+      local-cse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7001/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [demo-network]
+
+  python-app:
+    build:
+      context: .
+      dockerfile: python-app/Dockerfile
+    image: mesher-demo-python-app:${IMAGE_TAG:-local}
+    ports:
+      - "${PYTHON_PORT:-9000}:9000"
+      - "${MESHER_PORT:-30101}:30101"
+    environment:
+      <<: *servicecomb-environment
+      APP_PORT: 9000
+      JAVA_PROVIDER_SERVICE: java-provider
+      SERVICE_NAME: python-app
+      APP_ID: ${CAS_APPLICATION_NAME:-demo-application}
+      VERSION: ${CAS_INSTANCE_VERSION:-1.0.0}
+      SDK_APP_NAME: python-app
+      SDK_APP_ID: ${CAS_APPLICATION_NAME:-demo-application}
+      SDK_APP_VERSION: ${CAS_INSTANCE_VERSION:-1.0.0}
+    depends_on:
+      local-cse:
+        condition: service_healthy
+      java-provider:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket, urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=2).read(); connection=socket.create_connection(('127.0.0.1', 30101), 2); connection.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    networks: [demo-network]
+
+  java-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: java-consumer
+    image: mesher-demo-java-consumer:${IMAGE_TAG:-local}
+    ports:
+      - "${JAVA_CONSUMER_PORT:-7002}:7002"
+    environment:
+      <<: *servicecomb-environment
+    depends_on:
+      local-cse:
+        condition: service_healthy
+      python-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7002/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [demo-network]
+
+networks:
+  demo-network:
+    driver: bridge

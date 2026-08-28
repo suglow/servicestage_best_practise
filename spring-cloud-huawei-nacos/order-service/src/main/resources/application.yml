@@ -1,0 +1,61 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: order-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: CORE_GROUP
+        metadata:
+          version: "1.0.0"
+
+# ========================================================
+# Spring Cloud Huawei 治理配置
+# ========================================================
+servicecomb:
+  # -------------------- 灰度路由 --------------------
+  # routeRule 已迁移到 Nacos 配置中心（gray-routing.yaml）
+  # 由 bootstrap.yaml 通过 shared-configs 加载，支持动态刷新
+
+  # -------------------- contextMapper（灰度 header 映射） --------------------
+  # contextMapperFilter 读取此配置，将 HTTP header 映射到 InvocationContext
+  # 供 RouterFilter 在负载均衡时读取 header 进行路由匹配
+  # 注：contextMapper.default.target 为框架早期格式，当前框架使用 headerContextMapper
+
+  matchGroup:
+    rate-limit-test: |
+      matches:
+        - apiPath:
+            prefix: "/api/orders/test/rate-limit"
+
+  # -------------------- 订单端点限流 --------------------
+  rateLimiting:
+    rate-limit-test: |
+      rate: 2
+      limitRefreshPeriod: 5000
+      timeoutDuration: 0
+
+# ========================================================
+# 日志与诊断
+# ========================================================
+logging:
+  level:
+    root: INFO
+    com.huaweicloud.samples.nacos: INFO
+    # 灰度路由诊断（调试时取消注释）
+    com.huaweicloud: DEBUG
+    # com.huaweicloud.governance: DEBUG
+
+# Actuator（调试用）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,beans,env
+  endpoint:
+    beans:
+      enabled: true

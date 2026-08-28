@@ -1,0 +1,95 @@
+# Project-generated documentation artifacts
+/docx-build/
+/md2docx_tpl.py
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+
+# IDEs and editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+.project
+.classpath
+.factorypath
+.settings/
+.sts4-cache/
+.springBeans
+.apt_generated/
+.apt_generated_tests/
+bin/
+out/
+*.swp
+*.swo
+*~
+
+# Java build artifacts and JVM crash reports
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Spring Boot / Spring Cloud local runtime files
+logs/
+*.log
+*.pid
+*.pid.lock
+application-*.local.properties
+application-*.local.yml
+application-*.local.yaml
+bootstrap-*.local.properties
+bootstrap-*.local.yml
+bootstrap-*.local.yaml
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Python helper caches and environments
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig

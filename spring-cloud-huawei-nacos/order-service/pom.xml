@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.huaweicloud.samples.nacos</groupId>
+        <artifactId>spring-cloud-huawei-nacos</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>order-service</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Order Service</name>
+    <description>订单服务 — RestTemplate 调用、Nacos 发现、灰度与限流</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Spring Cloud Huawei Nacos starter -->
+        <dependency>
+            <groupId>com.huaweicloud</groupId>
+            <artifactId>spring-cloud-starter-huawei-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.huaweicloud.samples.nacos</groupId>
+            <artifactId>api-common</artifactId>
+        </dependency>
+        <!-- Actuator（调试诊断） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

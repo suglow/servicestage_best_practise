@@ -1,0 +1,41 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Docker
+nacos-data/
+gray-gateway-verify/
+# Hermes
+.hermes/
+.mermaid_cache/
+.vscode/
+.docx-venv/
+.assets/
+__pycache__/
+*.docx
+*.docx.bak
+
+
+gray-gateway-verify.zip

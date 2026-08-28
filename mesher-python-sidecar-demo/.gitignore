@@ -1,0 +1,21 @@
+# Build output
+**/target/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.venv/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Local files
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example

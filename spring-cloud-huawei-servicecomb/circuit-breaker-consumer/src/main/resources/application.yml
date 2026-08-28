@@ -1,0 +1,112 @@
+server:
+  port: 8097
+
+spring:
+  application:
+    name: circuit-breaker-consumer
+  cloud:
+    servicecomb:
+      discovery:
+        enabled: true
+      config:
+        serverType: kie
+
+# ========================================================
+# Spring Cloud Huawei — Consumer 侧熔断
+# 规则作用于"调用 provider" 的行为，保护 consumer 自己
+# 与 Provider 侧熔断的本质区别：
+#   Provider 侧：监控"Provider 自身入站请求" 的健康状态
+#   Consumer 侧：监控"Consumer 调用 Provider" 的成功率
+# ========================================================
+servicecomb:
+  # CircuitBreakerFilter 作用于 Consumer 的入站端点，因此按 Consumer API 路径匹配。
+  matchGroup:
+    # 实验 A：错误率触发熔断
+    circuit-consumer-error50: |
+      matches:
+        - apiPath:
+            prefix: "/api/consumer/circuit/error50"
+
+    # 实验 B：慢调用触发熔断
+    circuit-consumer-slow: |
+      matches:
+        - apiPath:
+            prefix: "/api/consumer/circuit/slow"
+
+    # 实验 C：验证正常接口不受影响
+    circuit-consumer-normal: |
+      matches:
+        - apiPath:
+            prefix: "/api/consumer/circuit/normal"
+
+    # 实验 D：熔断打开后的降级验证
+    circuit-consumer-fallback: |
+      matches:
+        - apiPath:
+            prefix: "/api/consumer/circuit/fallback"
+
+    # 实验 E：对比 Provider 侧熔断
+    circuit-consumer-provider-cb: |
+      matches:
+        - apiPath:
+            prefix: "/api/consumer/circuit/provider-cb"
+
+  circuitBreaker:
+    # 实验 A：错误率 50% 触发熔断
+    # Consumer 侧熔断：Consumer 看到 50% 错误 → 熔断打开 → 直接降级
+    circuit-consumer-error50: |
+      minimumNumberOfCalls: 6
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      slowCallRateThreshold: 100
+      slowCallDurationThreshold: 1000
+      waitDurationInOpenState: 15000
+      permittedNumberOfCallsInHalfOpenState: 3
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+
+    # 实验 B：慢调用 50% 触发熔断
+    circuit-consumer-slow: |
+      minimumNumberOfCalls: 4
+      slidingWindowSize: 8
+      slidingWindowType: COUNT_BASED
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 1000
+      waitDurationInOpenState: 15000
+      permittedNumberOfCallsInHalfOpenState: 2
+
+    # 实验 C：正常接口（不会触发熔断）
+    circuit-consumer-normal: |
+      minimumNumberOfCalls: 10
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+
+    # 实验 D：降级验证（同 error50 规则）
+    circuit-consumer-fallback: |
+      minimumNumberOfCalls: 6
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 15000
+      permittedNumberOfCallsInHalfOpenState: 3
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+
+    # 实验 E：对比 Provider 侧熔断
+    circuit-consumer-provider-cb: |
+      minimumNumberOfCalls: 6
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 15000
+      permittedNumberOfCallsInHalfOpenState: 3
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503

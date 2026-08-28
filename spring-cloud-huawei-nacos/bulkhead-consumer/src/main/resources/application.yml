@@ -1,0 +1,45 @@
+server:
+  port: 8095
+
+spring:
+  application:
+    name: bulkhead-consumer
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: GOVERNANCE_GROUP
+
+# ====================================================
+# 舱壁隔离规则 (Consumer 侧 instanceBulkhead)
+# ====================================================
+servicecomb:
+  matchGroup:
+    bulkRateLimitingOperation: |
+      matches:
+        - apiPath:
+            prefix: "/bulk-rate-limiting"
+    bulkNoRateLimitingOperation: |
+      matches:
+        - apiPath:
+            prefix: "/bulk-no-rate-limiting"
+    bulkServiceNameOperation: |
+      matches:
+        - apiPath:
+            prefix: "/bulk-service-name"
+          serviceName: bulkhead-provider
+
+  instanceBulkhead:
+    # 并发限制2，不等待 — 超限直接拒绝
+    bulkRateLimitingOperation: |
+      maxConcurrentCalls: 2
+      maxWaitDuration: 0
+    # 并发限制2，等待10s — 排队获取许可
+    bulkNoRateLimitingOperation: |
+      maxConcurrentCalls: 2
+      maxWaitDuration: 10000
+    # serviceName 限定 — 只对 bulkhead-provider 生效
+    bulkServiceNameOperation: |
+      maxConcurrentCalls: 2
+      maxWaitDuration: 0

@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: CORE_GROUP
+    gateway:
+      routes:
+        - id: product-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=0
+        - id: order-route
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=0
+        - id: order-route-feign
+          uri: lb://order-service-feign
+          predicates:
+            - Path=/api/orders-fg/**
+          filters:
+            - StripPrefix=0
+
+# ========================================================
+# Spring Cloud Huawei 路由配置 — 灰度发布
+# ========================================================
+# 灰度路由完全由框架内置 WebFluxServiceInstanceFilter 处理
+# routeRule 已迁移到 Nacos 配置中心（gray-routing.yaml）
+# 由 bootstrap.yaml 通过 shared-configs 加载，支持动态刷新

@@ -1,0 +1,48 @@
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh,env,configprops,info
+  endpoint:
+    refresh:
+      enabled: true
+
+# 简单配置演示（KIE 会覆盖）
+demo:
+  conf:
+    text-message: "default-text-value"
+    yaml-message: "default-yaml-value"
+    props-message: "default-props-value"
+    refresh-timestamp: 0
+
+# 业务配置演示 — 通知服务 + 限流 + 功能开关（KIE properties 类型会覆盖）
+app:
+  tenant-id: default-tenant
+  notification:
+    email:
+      enabled: false
+      host: localhost
+      port: 25
+      username: ""
+      from-address: ""
+    sms:
+      enabled: false
+      provider: aliyun
+      api-key: ""
+      region: cn-hangzhou
+    webhook:
+      enabled: false
+      url: ""
+      secret: ""
+      retry-count: 3
+  limit:
+    qps: 200
+    burst-size: 50
+    timeout-ms: 3000
+  feature:
+    gray-release-enabled: false
+    new-ui-enabled: false
+    dark-mode-enabled: false

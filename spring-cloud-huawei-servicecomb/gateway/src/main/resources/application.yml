@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      routes:
+        - id: product-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=0
+        - id: order-route
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=0
+
+servicecomb:
+  # 灰度路由规则（KIE 动态配置，local-cse:30110）
+  # servicecomb.routeRule.product-service 由 kie-init 推送，本地不配置
+  # product-service 的实例路由规则由 kie-init 推送到 KIE
+  #
+  # 注意：application.yml 的 routeRule 会覆盖 KIE 配置
+  # 如需 KIE 生效，删除本文件中的 routeRule 配置
+
+  # 限流规则
+  matchGroup:
+    product-api: |
+      matches:
+        - apiPath:
+            prefix: "/api/products"
+    order-api: |
+      matches:
+        - apiPath:
+            prefix: "/api/orders"
+  rateLimiting:
+    product-api: |
+      rate: 20
+      limitRefreshPeriod: 1000
+      timeoutDuration: 0
+    order-api: |
+      rate: 10
+      limitRefreshPeriod: 1000
+      timeoutDuration: 0

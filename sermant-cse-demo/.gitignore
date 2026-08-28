@@ -1,0 +1,18 @@
+# Maven build output
+**/target/
+**/target.stale/
+
+# IDE and editor files
+**/bin/
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+
+# Local files
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example

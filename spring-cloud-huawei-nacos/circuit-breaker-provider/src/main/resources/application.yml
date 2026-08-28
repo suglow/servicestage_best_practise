@@ -1,0 +1,48 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: circuit-breaker-provider
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: CIRCUIT_GROUP
+        metadata:
+          version: "1.0.0"
+
+# Provider 入站请求使用的熔断规则。
+servicecomb:
+  matchGroup:
+    circuit-error-rate: |
+      matches:
+        - apiPath:
+            exact: "/api/circuit/error-rate"
+    circuit-slow-call: |
+      matches:
+        - apiPath:
+            exact: "/api/circuit/slow-call"
+
+  circuitBreaker:
+    circuit-error-rate: |
+      minimumNumberOfCalls: 6
+      slidingWindowSize: 10
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 50
+      waitDurationInOpenState: 5000
+      permittedNumberOfCallsInHalfOpenState: 2
+      recordFailureStatus:
+        - 500
+        - 502
+        - 503
+    circuit-slow-call: |
+      minimumNumberOfCalls: 4
+      slidingWindowSize: 8
+      slidingWindowType: COUNT_BASED
+      failureRateThreshold: 100
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 100
+      waitDurationInOpenState: 5000
+      permittedNumberOfCallsInHalfOpenState: 2

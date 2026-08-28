@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: product-service        # 与 v1 同名！通过 metadata version 区分
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: CORE_GROUP
+        metadata:
+          version: "2.0.0"      # 灰度版本标识

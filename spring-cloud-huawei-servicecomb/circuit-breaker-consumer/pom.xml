@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.huaweicloud.samples.servicecomb</groupId>
+        <artifactId>spring-cloud-huawei-servicecomb</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>circuit-breaker-consumer</artifactId>
+    <packaging>jar</packaging>
+    <name>Circuit Breaker Consumer</name>
+    <description>演示 Spring Cloud Huawei Consumer 侧熔断与降级</description>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.huaweicloud</groupId>
+            <artifactId>spring-cloud-starter-huawei-service-engine</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

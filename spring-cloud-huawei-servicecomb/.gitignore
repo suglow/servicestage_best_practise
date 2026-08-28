@@ -1,0 +1,20 @@
+# Maven
+**/target/
+**/target.stale/
+
+# IDE-generated output and metadata
+**/bin/
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+
+# Editor and OS files
+*.log
+.DS_Store
+
+# Local environment overrides
+.env
+.env.*
+!.env.example

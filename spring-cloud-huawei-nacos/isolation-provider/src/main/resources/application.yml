@@ -1,0 +1,12 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: isolation-provider
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: GOVERNANCE_GROUP
